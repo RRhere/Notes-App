@@ -5,11 +5,9 @@ from . import db, mail
 from flask_login import login_user, login_required, logout_user, current_user
 from flask_mail import Message
 import random
-from celery import Celery
 from .sync_google_sheets import sync_with_google_sheets
 
 auth = Blueprint('auth', __name__)
-celery = Celery(__name__)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -54,7 +52,6 @@ def verify(email, otp_value):
 
     return render_template('verify.html', email=email, user=current_user)
 
-@celery.task
 def send_otp_email(email, otp):
     subject = 'OTP Verification'
     body = f'Your OTP for account verification is: {otp}'
