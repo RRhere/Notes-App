@@ -4,11 +4,11 @@ import random
 import re
 import threading
 import os
+import requests
 
 from datetime import datetime, timedelta
 from flask import current_app
-from . import db, mail
-from flask_mail import Message
+from . import db
 from email_validator import EmailNotValidError, validate_email
 from flask import (Blueprint, flash, jsonify, redirect, render_template, request, url_for)
 from flask_login import current_user, login_required, login_user, logout_user
@@ -80,36 +80,42 @@ def send_otp_email(email, otp):
 
     try:
 
-        subject = 'Your Notes App Verification Code'
+        url = "https://api.brevo.com/v3/smtp/email"
 
-        body = f"""
-Hello,
+        headers = {
+            "accept": "application/json",
+            "api-key": os.environ.get("BREVO_API_KEY"),
+            "content-type": "application/json"
+        }
 
-Your OTP code is:
+        payload = {
+            "sender": {
+                "name": "Notes App",
+                "email": "ragavsocialspam@gmail.com"
+            },
+            "to": [
+                {
+                    "email": email
+                }
+            ],
+            "subject": "OTP Verification",
+            "htmlContent": f"""
+            <h2>Your OTP Code</h2>
+            <h1>{otp}</h1>
+            <p>This code expires in 15 minutes.</p>
+            """
+        }
 
-{otp}
-
-This code expires in 15 minutes.
-
-Regards,
-Notes App
-"""
-
-        msg = Message(
-            subject,
-            recipients=[email],
-            body=body
+        response = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=15
         )
 
-        with mail.connect() as conn:
+        print(response.text)
 
-            conn.send(msg)
-
-        logger.info(
-            f"OTP email sent to {email}"
-        )
-
-        return True
+        return response.status_code == 201
 
     except Exception as e:
 

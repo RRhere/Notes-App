@@ -21,13 +21,8 @@ SESSION_COOKIE_SAMESITE = "Lax"
 PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
 # MAIL CONFIGURATION
-MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp-relay.brevo.com")
-MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
 MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", True)
 MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL", False)
-MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
-MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME", "aac43a001@smtp-brevo.com")
 
 # SECURITY CONFIGURATION
 WTF_CSRF_ENABLED = True
