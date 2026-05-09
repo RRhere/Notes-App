@@ -5,84 +5,114 @@
 {% block content %}
 
 <div class="auth-wrapper">
-    <div class="auth-card">
-        <div class="auth-header">
-            <i class="fas fa-shield-alt"></i>
-            <h1 class="auth-title">Verify Your Email</h1>
-            <p class="auth-subtitle">Enter the verification code sent to {{ email }}</p>
-        </div>
-
-        <form method="POST" id="verifyForm">
-            {{ csrf_token() }}
-
-            <div class="mb-4">
-                <label for="otp" class="form-label">Verification Code</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent">
-                        <i class="fas fa-lock text-primary"></i>
-                    </span>
-                    <input
-                        type="text"
-                        class="form-control custom-input text-center"
-                        id="otp"
-                        name="otp"
-                        placeholder="Enter 6-digit code"
-                        maxlength="6"
-                        pattern="[0-9]{6}"
-                        required
-                        inputmode="numeric"
-                    >
-                </div>
-                <small class="form-text text-muted">Check your email for the verification code</small>
-            </div>
-
-            <button
-                type="submit"
-                class="custom-btn w-100 btn-lg"
-                id="submitBtn"
-            >
-                <i class="fas fa-check me-2"></i>
-                Verify Code
-            </button>
-        </form>
-
-        <div class="auth-footer">
-            <p class="mb-0">
-                Didn't receive the code?
-                <a href="#" onclick="resendCode()" class="text-decoration-none fw-bold">
-                    Resend code
-                </a>
-            </p>
-        </div>
+  <div class="auth-card">
+    <div class="auth-header">
+      <i class="fas fa-shield-alt"></i>
+      <h1 class="auth-title">Verify Your Email</h1>
+      <p class="auth-subtitle">Enter the verification code sent to {{ email }}</p>
     </div>
+
+    <form method="POST" id="verifyForm">
+      <!-- BUG FIX: hidden input so the CSRF token is actually submitted -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="mb-4">
+        <label for="otp" class="form-label">Verification Code</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent">
+            <i class="fas fa-lock text-primary"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control custom-input text-center"
+            id="otp"
+            name="otp"
+            placeholder="Enter 6-digit code"
+            maxlength="6"
+            pattern="[0-9]{6}"
+            required
+            inputmode="numeric"
+            autocomplete="one-time-code"
+          >
+        </div>
+        <small class="form-text text-muted">Check your email for the verification code. It expires in 15 minutes.</small>
+      </div>
+
+      <button type="submit" class="custom-btn w-100 btn-lg" id="submitBtn">
+        <i class="fas fa-check me-2"></i>Verify Code
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p class="mb-0">
+        Didn't receive the code?
+        <!--
+          BUG FIX: the old resendCode() just called showToast() and never
+          contacted the server.  The new version POSTs to the /resend_otp
+          endpoint added in auth.py which actually generates a fresh OTP and
+          sends the email.
+        -->
+        <a href="#" id="resendLink" class="text-decoration-none fw-bold">Resend code</a>
+      </p>
+    </div>
+  </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Only allow numbers
-    document.getElementById('otp').addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+  // Only allow digits
+  document.getElementById('otp').addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9]/g, '');
+  });
+
+  document.getElementById('verifyForm').addEventListener('submit', function () {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check me-2"></i>Verify Code';
+    }, 8000);
+  });
+
+  // BUG FIX: actually call the server to resend the OTP
+  document.getElementById('resendLink').addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const link      = this;
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    // email is rendered by Jinja and JSON-encoded to be JS-safe
+
+    link.textContent = 'Sending…';
+    link.style.pointerEvents = 'none';
+
+    fetch('/resend_otp/' + encodeURIComponent(email), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        // Flask-WTF also accepts the token via this header for AJAX requests
+        'X-CSRFToken': csrfToken,
+      },
+      body: 'csrf_token=' + encodeURIComponent(csrfToken),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        showToast(data.message, 'success');
+      } else {
+        showToast(data.message || 'Failed to resend code', 'danger');
+      }
+    })
+    .catch(() => showToast('An error occurred. Please try again.', 'danger'))
+    .finally(() => {
+      // Prevent spamming: re-enable after 60 s
+      setTimeout(() => {
+        link.textContent = 'Resend code';
+        link.style.pointerEvents = '';
+      }, 60000);
     });
-
-    document.getElementById('verifyForm').addEventListener('submit', function(e) {
-        const btn = document.getElementById('submitBtn');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
-
-        setTimeout(() => {
-            if (btn.disabled) {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        }, 5000);
-    });
-
-    function resendCode() {
-        event.preventDefault();
-        showToast('Verification code sent to your email', 'info');
-    }
+  });
 </script>
 {% endblock %}

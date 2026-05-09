@@ -1,36 +1,45 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from .models import User
-from werkzeug.security import generate_password_hash, check_password_hash
-from . import db, mail
-from flask_login import login_user, login_required, logout_user, current_user
-from flask_mail import Message
-from email_validator import validate_email, EmailNotValidError
-import random
+import hmac
 import logging
+import random
 import re
+from datetime import datetime, timedelta
+
+from email_validator import EmailNotValidError, validate_email
+from flask import (Blueprint, flash, jsonify, redirect, render_template,
+                   request, url_for)
+from flask_login import current_user, login_required, login_user, logout_user
+from flask_mail import Message
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from . import db, mail
+# BUG FIX: import the single app-bound limiter from __init__ instead of
+# creating a second, unregistered Limiter instance here.  The old code
+# instantiated `limiter = Limiter(key_func=get_remote_address)` inside
+# auth.py which was never initialised with the Flask app, so every
+# @limiter.limit decorator silently did nothing.
+from . import limiter
+from .models import User
 from .sync_google_sheets import sync_with_google_sheets
 
 auth = Blueprint('auth', __name__)
-limiter = Limiter(key_func=get_remote_address)
-
 logger = logging.getLogger(__name__)
 
+OTP_EXPIRY_MINUTES = 15
+
+
 # ============================================
-# VALIDATION FUNCTIONS
+# VALIDATION HELPERS
 # ============================================
 
 def validate_email_format(email):
-    """Validate email format using email_validator"""
     try:
         validate_email(email, check_deliverability=False)
         return True, None
     except EmailNotValidError as e:
         return False, str(e)
 
+
 def validate_password_strength(password):
-    """Validate password strength"""
     if len(password) < 8:
         return False, "Password must be at least 8 characters"
     if not re.search(r"[A-Z]", password):
@@ -41,8 +50,8 @@ def validate_password_strength(password):
         return False, "Password must contain at least one digit"
     return True, None
 
+
 def validate_name(name):
-    """Validate name length and characters"""
     if len(name) < 2:
         return False, "Name must be at least 2 characters"
     if len(name) > 50:
@@ -51,29 +60,47 @@ def validate_name(name):
         return False, "Name contains invalid characters"
     return True, None
 
+
+def _generate_otp(user):
+    """Set a fresh OTP on *user* and flush to the session (caller commits)."""
+    otp_value = random.randint(100000, 999999)
+    user.otp_secret = str(otp_value)
+    user.otp_created_at = datetime.utcnow()
+    return otp_value
+
+
+def _otp_expired(user):
+    """Return True if the stored OTP is older than OTP_EXPIRY_MINUTES."""
+    if not user.otp_created_at:
+        return True
+    return datetime.utcnow() - user.otp_created_at > timedelta(minutes=OTP_EXPIRY_MINUTES)
+
+
+def _otp_matches(user, candidate):
+    """Constant-time OTP comparison to prevent timing attacks."""
+    if not user.otp_secret:
+        return False
+    return hmac.compare_digest(user.otp_secret, candidate)
+
+
 def send_otp_email(email, otp):
-    """Send OTP email with error handling"""
     try:
         subject = 'Your Notes App Verification Code'
-        body = f'''
-Hello,
-
-Your verification code is: {otp}
-
-This code will expire in 15 minutes.
-
-If you didn't request this code, please ignore this email.
-
-Best regards,
-Notes App Team
-        '''
+        body = (
+            f"Hello,\n\n"
+            f"Your verification code is: {otp}\n\n"
+            f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.\n\n"
+            f"If you didn't request this code, please ignore this email.\n\n"
+            f"Best regards,\nNotes App Team"
+        )
         msg = Message(subject, recipients=[email], body=body)
         mail.send(msg)
-        logger.info(f"OTP email sent successfully to {email}")
+        logger.info(f"OTP email sent to {email}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+        logger.error(f"Failed to send OTP email to {email}: {e}")
         return False
+
 
 # ============================================
 # AUTH ROUTES
@@ -82,111 +109,145 @@ Notes App Team
 @auth.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
-    """Handle user login with rate limiting"""
     if current_user.is_authenticated:
         return redirect(url_for('views.home'))
-    
+
     if request.method == 'POST':
         try:
             email = request.form.get('email', '').strip().lower()
             password = request.form.get('password', '')
-            
+
             if not email or not password:
                 flash('Email and password are required', category='error')
                 return render_template("login.html", user=current_user)
-            
+
             user = User.query.filter_by(email=email).first()
-            
+
             if not user:
-                logger.warning(f"Login attempt with non-existent email: {email}")
+                logger.warning(f"Login attempt with unknown email: {email}")
                 flash('Invalid email or password', category='error')
                 return render_template("login.html", user=current_user)
-            
+
             if not user.is_verified:
                 logger.info(f"Login attempt with unverified account: {email}")
-                flash('Please verify your email first', category='warning')
-                otp_value = random.randint(100000, 999999)
-                user.otp_secret = str(otp_value)
+                otp_value = _generate_otp(user)
                 db.session.commit()
                 if send_otp_email(user.email, otp_value):
                     flash('Verification code sent to your email', 'info')
                     return redirect(url_for('auth.verify', email=user.email))
-                else:
-                    flash('Failed to send verification email. Please try again.', 'error')
-                    return render_template("login.html", user=current_user)
-            
+                flash('Failed to send verification email. Please try again.', 'error')
+                return render_template("login.html", user=current_user)
+
             if not check_password_hash(user.password, password):
-                logger.warning(f"Failed login attempt for user: {email}")
+                logger.warning(f"Failed login for: {email}")
                 flash('Invalid email or password', category='error')
                 return render_template("login.html", user=current_user)
-            
+
             login_user(user, remember=True)
-            logger.info(f"User logged in successfully: {email}")
+            logger.info(f"User logged in: {email}")
             flash('Logged in successfully!', category='success')
             return redirect(url_for('views.home'))
-            
+
         except Exception as e:
-            logger.error(f"Login error: {str(e)}")
+            logger.error(f"Login error: {e}")
             flash('An error occurred during login. Please try again.', category='error')
-            return render_template("login.html", user=current_user)
-    
+
     return render_template("login.html", user=current_user)
+
 
 @auth.route('/verify/<email>', methods=['GET', 'POST'])
 def verify(email):
-    """Handle email verification"""
     try:
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
             flash('User not found', category='error')
             return redirect(url_for('auth.login'))
-        
+
         if user.is_verified:
             flash('Email already verified. Please log in.', category='info')
             return redirect(url_for('auth.login'))
-        
+
         if request.method == 'POST':
             user_otp = request.form.get('otp', '').strip()
-            
+
             if not user_otp:
                 flash('Please enter the verification code', category='error')
                 return render_template('verify.html', email=email, user=current_user)
-            
-            if user_otp == user.otp_secret:
+
+            # BUG FIX: check expiry before comparing
+            if _otp_expired(user):
+                flash(
+                    f'Verification code has expired. '
+                    f'Please request a new one.',
+                    'error',
+                )
+                return render_template('verify.html', email=email, user=current_user)
+
+            # BUG FIX: constant-time comparison prevents timing attacks
+            if _otp_matches(user, user_otp):
                 user.is_verified = True
                 user.otp_secret = None
+                user.otp_created_at = None
                 db.session.commit()
-                logger.info(f"Email verified for user: {email}")
+                logger.info(f"Email verified for: {email}")
                 flash('Email verified successfully! You can now log in.', 'success')
                 return redirect(url_for('auth.login'))
-            else:
-                logger.warning(f"Invalid OTP attempt for user: {email}")
-                flash('Invalid verification code. Please try again.', 'error')
-        
+
+            logger.warning(f"Invalid OTP attempt for: {email}")
+            flash('Invalid verification code. Please try again.', 'error')
+
         return render_template('verify.html', email=email, user=current_user)
-    
+
     except Exception as e:
-        logger.error(f"Verification error: {str(e)}")
+        logger.error(f"Verification error: {e}")
         flash('An error occurred during verification. Please try again.', category='error')
         return redirect(url_for('auth.login'))
+
+
+@auth.route('/resend_otp/<email>', methods=['POST'])
+@limiter.limit("2 per minute")
+def resend_otp(email):
+    """
+    BUG FIX: new endpoint — the old verify.html had a resendCode() JS function
+    that only showed a toast but never contacted the server.  This route actually
+    generates a fresh OTP and sends the email.
+    """
+    try:
+        user = User.query.filter_by(email=email).first()
+
+        if not user or user.is_verified:
+            return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
+
+        otp_value = _generate_otp(user)
+        db.session.commit()
+
+        if send_otp_email(user.email, otp_value):
+            logger.info(f"OTP resent to {email}")
+            return jsonify({'status': 'success', 'message': 'Verification code resent to your email'})
+
+        return jsonify({'status': 'error', 'message': 'Failed to send email. Please try again.'}), 500
+
+    except Exception as e:
+        logger.error(f"Resend OTP error: {e}")
+        return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
+
 
 @auth.route('/logout')
 @login_required
 def logout():
-    """Handle user logout"""
     logger.info(f"User logged out: {current_user.email}")
     logout_user()
     flash('Logged out successfully', 'success')
     return redirect(url_for('auth.login'))
 
+
 @auth.route('/signup', methods=['GET', 'POST'])
 @limiter.limit("3 per minute")
 def signup():
-    """Handle user signup with validation"""
     if current_user.is_authenticated:
         return redirect(url_for('views.home'))
-    
+
     if request.method == 'POST':
         try:
             email = request.form.get('email', '').strip().lower()
@@ -194,159 +255,157 @@ def signup():
             last_name = request.form.get('lastName', '').strip()
             password1 = request.form.get('password1', '')
             password2 = request.form.get('password2', '')
-            
-            # Validate email
+
             is_valid, error_msg = validate_email_format(email)
             if not is_valid:
                 flash(f'Invalid email: {error_msg}', category='error')
                 return render_template("signup.html", user=current_user)
-            
-            # Check if email exists
+
             if User.query.filter_by(email=email).first():
-                logger.warning(f"Signup attempt with existing email: {email}")
+                logger.warning(f"Signup with existing email: {email}")
                 flash('Email already registered', category='error')
                 return render_template("signup.html", user=current_user)
-            
-            # Validate names
+
             is_valid, error_msg = validate_name(first_name)
             if not is_valid:
                 flash(f'Invalid first name: {error_msg}', category='error')
                 return render_template("signup.html", user=current_user)
-            
+
             is_valid, error_msg = validate_name(last_name)
             if not is_valid:
                 flash(f'Invalid last name: {error_msg}', category='error')
                 return render_template("signup.html", user=current_user)
-            
-            # Validate passwords match
+
             if password1 != password2:
                 flash('Passwords do not match', category='error')
                 return render_template("signup.html", user=current_user)
-            
-            # Validate password strength
+
             is_valid, error_msg = validate_password_strength(password1)
             if not is_valid:
                 flash(error_msg, category='error')
                 return render_template("signup.html", user=current_user)
-            
-            # Create user
-            otp_value = random.randint(100000, 999999)
+
             new_user = User(
                 email=email,
                 first_name=first_name,
                 last_name=last_name,
-                otp_secret=str(otp_value),
+                otp_secret=None,
+                otp_created_at=None,
                 is_verified=False,
-                password=generate_password_hash(password1, method='pbkdf2:sha256:6000')
+                password=generate_password_hash(password1, method='pbkdf2:sha256:260000'),
             )
             db.session.add(new_user)
+            db.session.flush()          # get new_user.id without committing
+
+            otp_value = _generate_otp(new_user)
             db.session.commit()
-            
+
             logger.info(f"New user registered: {email}")
-            
-            # Try to sync with Google Sheets
+
             try:
                 sync_with_google_sheets()
             except Exception as e:
-                logger.warning(f"Google Sheets sync failed during signup: {str(e)}")
-            
-            # Send OTP email
+                logger.warning(f"Google Sheets sync failed during signup: {e}")
+
             if send_otp_email(new_user.email, otp_value):
                 flash('Verification code sent to your email. Please check your inbox.', 'info')
                 return redirect(url_for('auth.verify', email=new_user.email))
-            else:
-                flash('Account created but verification email failed. Please try logging in.', 'warning')
-                return redirect(url_for('auth.login'))
-        
+
+            flash('Account created but verification email failed. Please try logging in.', 'warning')
+            return redirect(url_for('auth.login'))
+
         except Exception as e:
-            logger.error(f"Signup error: {str(e)}")
+            logger.error(f"Signup error: {e}")
             db.session.rollback()
             flash('An error occurred during registration. Please try again.', category='error')
-            return render_template("signup.html", user=current_user)
-    
+
     return render_template("signup.html", user=current_user)
+
 
 @auth.route('/forgot_password', methods=['GET', 'POST'])
 @limiter.limit("3 per minute")
 def forgot_password():
-    """Handle password reset request"""
     if current_user.is_authenticated:
         return redirect(url_for('views.home'))
-    
+
     if request.method == 'POST':
         try:
             email = request.form.get('email', '').strip().lower()
-            
+
             if not email:
                 flash('Please enter your email', category='error')
                 return render_template("forgot_password.html", user=current_user)
-            
+
             user = User.query.filter_by(email=email).first()
-            
+
             if not user:
-                logger.info(f"Password reset request for non-existent email: {email}")
+                logger.info(f"Password reset for unknown email: {email}")
+                # Generic message prevents email enumeration
                 flash('If an account exists, a verification code will be sent', 'info')
                 return render_template("forgot_password.html", user=current_user)
-            
-            otp_value = random.randint(100000, 999999)
-            user.otp_secret = str(otp_value)
+
+            otp_value = _generate_otp(user)
             db.session.commit()
-            
+
             if send_otp_email(user.email, otp_value):
                 logger.info(f"Password reset code sent to: {email}")
                 flash('Verification code sent to your email', 'info')
                 return redirect(url_for('auth.reset_password', email=user.email))
-            else:
-                flash('Failed to send verification email. Please try again.', 'error')
-                return render_template("forgot_password.html", user=current_user)
-        
+
+            flash('Failed to send verification email. Please try again.', 'error')
+
         except Exception as e:
-            logger.error(f"Forgot password error: {str(e)}")
+            logger.error(f"Forgot password error: {e}")
             flash('An error occurred. Please try again.', category='error')
-            return render_template("forgot_password.html", user=current_user)
-    
+
     return render_template("forgot_password.html", user=current_user)
+
 
 @auth.route('/reset_password/<email>', methods=['GET', 'POST'])
 def reset_password(email):
-    """Handle password reset"""
     try:
         user = User.query.filter_by(email=email).first()
-        
+
         if not user:
             flash('User not found', category='error')
             return redirect(url_for('auth.login'))
-        
+
         if request.method == 'POST':
             user_otp = request.form.get('otp', '').strip()
             new_password1 = request.form.get('password1', '')
             new_password2 = request.form.get('password2', '')
-            
-            if user_otp != user.otp_secret:
+
+            # BUG FIX: check expiry before comparing
+            if _otp_expired(user):
+                flash('Verification code has expired. Please request a new one.', 'error')
+                return redirect(url_for('auth.forgot_password'))
+
+            if not _otp_matches(user, user_otp):
                 logger.warning(f"Invalid OTP during password reset for: {email}")
                 flash('Invalid verification code. Please try again.', 'error')
                 return render_template('reset_password.html', email=email, user=current_user)
-            
+
             if new_password1 != new_password2:
                 flash('Passwords do not match', category='error')
                 return render_template('reset_password.html', email=email, user=current_user)
-            
+
             is_valid, error_msg = validate_password_strength(new_password1)
             if not is_valid:
                 flash(error_msg, category='error')
                 return render_template('reset_password.html', email=email, user=current_user)
-            
-            user.password = generate_password_hash(new_password1, method='pbkdf2:sha256:6000')
+
+            user.password = generate_password_hash(new_password1, method='pbkdf2:sha256:260000')
             user.otp_secret = None
+            user.otp_created_at = None
             db.session.commit()
-            
-            logger.info(f"Password reset successfully for: {email}")
+
+            logger.info(f"Password reset for: {email}")
             flash('Password reset successfully! You can now log in.', 'success')
             return redirect(url_for('auth.login'))
-        
+
         return render_template('reset_password.html', email=email, user=current_user)
-    
+
     except Exception as e:
-        logger.error(f"Password reset error: {str(e)}")
+        logger.error(f"Password reset error: {e}")
         flash('An error occurred during password reset. Please try again.', category='error')
         return redirect(url_for('auth.login'))

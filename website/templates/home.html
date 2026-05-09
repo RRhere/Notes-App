@@ -5,290 +5,295 @@
 {% block content %}
 
 <div class="notes-container">
-    <!-- Header -->
-    <div class="notes-header mb-5">
-        <div>
-            <h1 class="page-title">
-                <i class="fas fa-sticky-note me-2 text-primary"></i>
-                My Notes
-            </h1>
-            <p class="text-muted">
-                {{ notes|length }} note{{ 's' if notes|length != 1 else '' }} in your account
-            </p>
-        </div>
+  <!-- Header -->
+  <div class="notes-header mb-5">
+    <div>
+      <h1 class="page-title">
+        <i class="fas fa-sticky-note me-2 text-primary"></i>My Notes
+      </h1>
+      <p class="text-muted" id="noteCount">
+        {{ notes|length }} note{{ 's' if notes|length != 1 else '' }} in your account
+      </p>
+    </div>
+  </div>
+
+  <!-- CREATE NOTE -->
+  <div class="glass-card mb-5 create-note-card">
+    <div class="card-header-custom">
+      <h5 class="mb-0">
+        <i class="fas fa-plus-circle me-2 text-primary"></i>Create New Note
+      </h5>
     </div>
 
-    <!-- CREATE NOTE SECTION -->
-    <div class="glass-card mb-5 create-note-card">
-        <div class="card-header-custom">
-            <h5 class="mb-0">
-                <i class="fas fa-plus-circle me-2 text-primary"></i>
-                Create New Note
-            </h5>
-        </div>
+    <form method="POST" id="noteForm" class="needs-validation" novalidate>
+      <!--
+        BUG FIX: previously this was bare `{{ csrf_token() }}` which renders
+        the token as visible text and never submits it as a form field, causing
+        every POST to fail with a 400 CSRF error.  The JS delete code also
+        looked for `input[name="csrf_token"]` — if it didn't exist the whole
+        delete flow threw an exception.
+      -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <form method="POST" id="noteForm" class="needs-validation">
-            {{ csrf_token() }}
+      <div class="mb-4">
+        <label for="title" class="form-label">Note Title</label>
+        <input
+          type="text"
+          class="form-control custom-input"
+          id="title"
+          name="title"
+          placeholder="Enter note title..."
+          maxlength="200"
+          required
+        >
+        <small class="form-text text-muted"><span id="titleCount">0</span>/200 characters</small>
+      </div>
 
-            <div class="mb-4">
-                <label for="title" class="form-label">Note Title</label>
-                <input
-                    type="text"
-                    class="form-control custom-input"
-                    id="title"
-                    name="title"
-                    placeholder="Enter note title..."
-                    maxlength="200"
-                    required
+      <div class="mb-4">
+        <label for="content" class="form-label">Note Content</label>
+        <textarea
+          class="form-control custom-input"
+          id="content"
+          name="content"
+          rows="6"
+          placeholder="Write your note here..."
+          maxlength="10000"
+          required
+        ></textarea>
+        <small class="form-text text-muted"><span id="contentCount">0</span>/10,000 characters</small>
+      </div>
+
+      <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <button type="reset" class="btn btn-outline-secondary" id="clearBtn">
+          <i class="fas fa-redo me-2"></i>Clear
+        </button>
+        <button type="submit" class="custom-btn btn-lg" id="submitBtn">
+          <i class="fas fa-save me-2"></i>Save Note
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- NOTES GRID -->
+  <div class="notes-section">
+    {% if notes %}
+      <h5 class="mb-4">
+        <i class="fas fa-list me-2 text-primary"></i>Your Notes
+      </h5>
+      <div class="row" id="notesContainer">
+        {% for note in notes %}
+          <div class="col-lg-4 col-md-6 mb-4" id="note-{{ note.id }}">
+            <div class="note-card">
+              <div class="note-header">
+                <h5 class="note-title">{{ note.title }}</h5>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger delete-btn"
+                  data-note-id="{{ note.id }}"
+                  title="Delete note"
                 >
-                <small class="form-text text-muted"><span id="titleCount">0</span>/200 characters</small>
-            </div>
-
-            <div class="mb-4">
-                <label for="content" class="form-label">Note Content</label>
-                <textarea
-                    class="form-control custom-input"
-                    id="content"
-                    name="content"
-                    rows="6"
-                    placeholder="Write your note here..."
-                    maxlength="10000"
-                    required
-                ></textarea>
-                <small class="form-text text-muted"><span id="contentCount">0</span>/10,000 characters</small>
-            </div>
-
-            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <button type="reset" class="btn btn-outline-secondary">
-                    <i class="fas fa-redo me-2"></i>
-                    Clear
+                  <i class="fas fa-trash"></i>
                 </button>
-                <button type="submit" class="custom-btn btn-lg" id="submitBtn">
-                    <i class="fas fa-save me-2"></i>
-                    Save Note
-                </button>
+              </div>
+              <div class="note-content">
+                <p class="note-text">
+                  {{ note.content[:150] }}{% if note.content|length > 150 %}…{% endif %}
+                </p>
+              </div>
+              <div class="note-footer">
+                <small class="text-muted">
+                  <i class="fas fa-calendar me-1"></i>
+                  {{ note.created.strftime('%B %d, %Y at %I:%M %p') }}
+                </small>
+              </div>
             </div>
-        </form>
-    </div>
-
-    <!-- NOTES GRID -->
-    <div class="notes-section">
-        {% if notes %}
-            <h5 class="mb-4">
-                <i class="fas fa-list me-2 text-primary"></i>
-                Your Notes
-            </h5>
-
-            <div class="row" id="notesContainer">
-                {% for note in notes %}
-                    <div class="col-lg-4 col-md-6 mb-4" id="note-{{ note.id }}">
-                        <div class="note-card">
-                            <div class="note-header">
-                                <h5 class="note-title">{{ note.title }}</h5>
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-danger delete-btn"
-                                    data-note-id="{{ note.id }}"
-                                    title="Delete note"
-                                >
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-
-                            <div class="note-content">
-                                <p class="note-text">{{ note.content[:150] }}{% if note.content|length > 150 %}...{% endif %}</p>
-                            </div>
-
-                            <div class="note-footer">
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar me-1"></i>
-                                    {{ note.created.strftime('%B %d, %Y at %I:%M %p') }}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="fas fa-inbox"></i>
-                </div>
-                <h5>No notes yet</h5>
-                <p class="text-muted">Create your first note to get started!</p>
-            </div>
-        {% endif %}
-    </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+        <h5>No notes yet</h5>
+        <p class="text-muted">Create your first note to get started!</p>
+      </div>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark border-danger">
-            <div class="modal-header border-danger">
-                <h5 class="modal-title">
-                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-                    Delete Note
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this note? This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer border-danger">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
-            </div>
-        </div>
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-danger">
+      <div class="modal-header border-danger">
+        <h5 class="modal-title" id="deleteModalLabel">
+          <i class="fas fa-exclamation-triangle text-danger me-2"></i>Delete Note
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this note? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer border-danger">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+      </div>
     </div>
+  </div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Character counter
-    document.getElementById('title').addEventListener('input', function() {
-        document.getElementById('titleCount').textContent = this.value.length;
+  // ── Character counters ────────────────────────────────────────────────────
+  document.getElementById('title').addEventListener('input', function () {
+    document.getElementById('titleCount').textContent = this.value.length;
+  });
+  document.getElementById('content').addEventListener('input', function () {
+    document.getElementById('contentCount').textContent = this.value.length;
+  });
+
+  // Reset character counters when Clear is clicked
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    document.getElementById('titleCount').textContent   = '0';
+    document.getElementById('contentCount').textContent = '0';
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function getCsrfToken() {
+    // BUG FIX: the old code crashed here because csrf_token() was bare text
+    // (not a hidden input), so querySelector returned null.
+    return document.querySelector('input[name="csrf_token"]').value;
+  }
+
+  function updateNoteCount() {
+    const container = document.getElementById('notesContainer');
+    const count     = container ? container.children.length : 0;
+    const counter   = document.getElementById('noteCount');
+    if (counter) {
+      counter.textContent = count + (count === 1 ? ' note in your account' : ' notes in your account');
+    }
+    // Show empty state if no notes remain
+    if (count === 0) {
+      const section = document.querySelector('.notes-section');
+      if (section) {
+        section.innerHTML = `
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+            <h5>No notes yet</h5>
+            <p class="text-muted">Create your first note to get started!</p>
+          </div>`;
+      }
+    }
+  }
+
+  // ── Delete flow ───────────────────────────────────────────────────────────
+  let noteIdToDelete = null;
+  const deleteModal  = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      noteIdToDelete = this.getAttribute('data-note-id');
+      deleteModal.show();
     });
+  });
 
-    document.getElementById('content').addEventListener('input', function() {
-        document.getElementById('contentCount').textContent = this.value.length;
-    });
+  document.getElementById('confirmDelete').addEventListener('click', function () {
+    if (noteIdToDelete) {
+      deleteNote(noteIdToDelete);
+      deleteModal.hide();
+    }
+  });
 
-    // Delete note functionality
-    let noteIdToDelete = null;
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+  function deleteNote(noteId) {
+    showLoading();
 
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            noteIdToDelete = this.getAttribute('data-note-id');
-            deleteModal.show();
-        });
-    });
+    const formData = new FormData();
+    formData.append('csrf_token', getCsrfToken());
 
-    document.getElementById('confirmDelete').addEventListener('click', function() {
-        if (noteIdToDelete) {
-            deleteNote(noteIdToDelete);
-            deleteModal.hide();
+    fetch('/delete/' + noteId, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+      hideLoading();
+      if (data.status === 'success') {
+        const el = document.getElementById('note-' + noteId);
+        if (el) {
+          el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          el.style.opacity    = '0';
+          el.style.transform  = 'scale(0.95)';
+          setTimeout(() => {
+            el.remove();
+            updateNoteCount();
+            showToast('Note deleted successfully', 'success');
+          }, 300);
         }
+      } else {
+        showToast(data.message || 'Failed to delete note', 'danger');
+      }
+    })
+    .catch(() => {
+      hideLoading();
+      showToast('An error occurred', 'danger');
     });
+  }
 
-    function deleteNote(noteId) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/delete/' + noteId;
+  // ── Create note (AJAX) ────────────────────────────────────────────────────
+  document.getElementById('noteForm').addEventListener('submit', function (e) {
+    e.preventDefault();
 
-        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-        const tokenInput = document.createElement('input');
-        tokenInput.type = 'hidden';
-        tokenInput.name = 'csrf_token';
-        tokenInput.value = csrfToken;
-
-        form.appendChild(tokenInput);
-        document.body.appendChild(form);
-
-        showLoading();
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            hideLoading();
-            if (data.status === 'success') {
-                const noteElement = document.getElementById('note-' + noteId);
-                if (noteElement) {
-                    noteElement.style.transition = 'opacity 0.3s ease';
-                    noteElement.style.opacity = '0';
-                    setTimeout(() => {
-                        noteElement.remove();
-                        showToast('Note deleted successfully', 'success');
-                        
-                        // Check if no notes left
-                        const container = document.getElementById('notesContainer');
-                        if (container && container.children.length === 0) {
-                            location.reload();
-                        }
-                    }, 300);
-                }
-            } else {
-                showToast(data.message || 'Failed to delete note', 'error');
-            }
-        })
-        .catch(error => {
-            hideLoading();
-            showToast('An error occurred', 'error');
-            console.error('Error:', error);
-        })
-        .finally(() => {
-            document.body.removeChild(form);
-        });
+    if (!this.checkValidity()) {
+      this.classList.add('was-validated');
+      return;
     }
 
-    // Form submission
-    document.getElementById('noteForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+    const title   = document.getElementById('title').value.trim();
+    const content = document.getElementById('content').value.trim();
 
-        if (!this.checkValidity()) {
-            e.stopPropagation();
-            this.classList.add('was-validated');
-            return;
-        }
+    if (!title || !content) {
+      showToast('Please fill in all fields', 'warning');
+      return;
+    }
 
-        const title = document.getElementById('title').value.trim();
-        const content = document.getElementById('content').value.trim();
+    const btn         = document.getElementById('submitBtn');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
 
-        if (!title || !content) {
-            showToast('Please fill in all fields', 'warning');
-            return;
-        }
+    showLoading();
 
-        const btn = document.getElementById('submitBtn');
-        const originalHTML = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    fetch('/', {
+      method: 'POST',
+      body: new FormData(this),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+      hideLoading();
+      btn.disabled  = false;
+      btn.innerHTML = originalHTML;
 
-        showLoading();
-
-        fetch(this.action || '/', {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            hideLoading();
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-
-            if (data.status === 'success') {
-                showToast(data.message || 'Note saved successfully!', 'success');
-                this.reset();
-                document.getElementById('titleCount').textContent = '0';
-                document.getElementById('contentCount').textContent = '0';
-                this.classList.remove('was-validated');
-
-                // Reload notes or add new note to UI
-                setTimeout(() => {
-                    location.reload();
-                }, 500);
-            } else {
-                showToast(data.message || 'Failed to save note', 'error');
-            }
-        })
-        .catch(error => {
-            hideLoading();
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
-            showToast('An error occurred while saving the note', 'error');
-            console.error('Error:', error);
-        });
+      if (data.status === 'success') {
+        showToast(data.message || 'Note saved successfully!', 'success');
+        this.reset();
+        this.classList.remove('was-validated');
+        document.getElementById('titleCount').textContent   = '0';
+        document.getElementById('contentCount').textContent = '0';
+        // Reload to render the new note card
+        setTimeout(() => location.reload(), 500);
+      } else {
+        showToast(data.message || 'Failed to save note', 'danger');
+      }
+    })
+    .catch(() => {
+      hideLoading();
+      btn.disabled  = false;
+      btn.innerHTML = originalHTML;
+      showToast('An error occurred while saving the note', 'danger');
     });
+  });
 </script>
 {% endblock %}
