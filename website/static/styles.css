@@ -1,28 +1,36 @@
-#togglePassword {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid transparent;
-    border-left: none;
-    color: #ff004f;
-    border-radius: 0 12px 12px 0;
-    padding: 0 16px;
-    transition: all 0.3s ease;
+.password-toggle-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-left: none !important;
+
+    color: #94a3b8 !important;
+
+    width: 60px;
+    min-width: 60px;
+
+    border-radius: 0 12px 12px 0 !important;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    transition: all 0.3s ease;
 }
 
-#togglePassword:hover {
-    background: #ff004f;
-    color: white;
+.password-toggle-btn:hover {
+    background: rgba(255, 0, 79, 0.12) !important;
+    border-color: rgba(255, 0, 79, 0.35) !important;
+    color: #ff004f !important;
 }
 
-#togglePassword:focus {
-    box-shadow: none;
-    outline: none;
+.password-toggle-btn:focus,
+.password-toggle-btn:active {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
-#togglePassword i {
-    font-size: 16px;
+.password-toggle-btn i {
+    font-size: 15px;
 }
 
 /* =========================
@@ -298,22 +306,45 @@ main {
     cursor: pointer;
 }
 
+.input-group {
+    overflow: hidden;
+    border-radius: 12px;
+}
+
 .input-group-text {
-    background: transparent !important;
-    border: 1px solid transparent !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-right: none !important;
-    color: var(--muted);
-    transition: 0.3s ease;
+
+    color: var(--muted) !important;
+
+    border-radius: 12px 0 0 12px !important;
+
+    padding: 0 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .custom-input {
     background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid transparent !important;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+
+    border-left: none !important;
+    border-right: none !important;
+
     color: white !important;
-    border-radius: 12px !important;
+
     padding: 12px 16px !important;
+
     font-size: 0.95rem;
+
     transition: all 0.3s ease;
+
+    box-shadow: none !important;
 }
 
 .custom-input::placeholder {

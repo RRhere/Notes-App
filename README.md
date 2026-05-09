@@ -204,14 +204,6 @@ Notes-App/
 
 ## 🚀 Deployment
 
-### Deploy to Render
-See [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md) for:
-- Full deployment instructions
-- Environment configuration
-- Database setup
-- Email configuration
-- Security checklist
-
 ### Deploy with Gunicorn
 ```bash
 gunicorn -w 4 -b 0.0.0.0:5000 main:app
@@ -252,23 +244,17 @@ grep ERROR logs/app.log
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues or pull requests.
-
----
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
----
-
 ## 👨‍💻 Author
 
 **Ragav Radhesh**
 
-Built with ❤️ for productivity
+Built with ❤️.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ---
 
@@ -293,6 +279,12 @@ Star the repository
 Fork the project
 Share it with others
  
- ---
+---
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+---
 
 **Last Updated**: May 2026
