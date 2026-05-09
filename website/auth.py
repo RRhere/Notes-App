@@ -4,6 +4,7 @@ import random
 import re
 import threading
 import resend
+import os
 
 from datetime import datetime, timedelta
 from flask import current_app
