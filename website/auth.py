@@ -84,7 +84,7 @@ def send_otp_email(email, otp):
     try:
 
         params = {
-            "from": "Notes App <onboarding@resend.dev>",
+            "from": "Notes App <noreply@notes-app-s9nr.onrender.com>",
             "to": [email],
             "subject": "Your Notes App Verification Code",
             "html": f"""
