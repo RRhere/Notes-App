@@ -7,6 +7,8 @@ import os
 
 from datetime import datetime, timedelta
 from flask import current_app
+from . import db, mail
+from flask_mail import Message
 from email_validator import EmailNotValidError, validate_email
 from flask import (Blueprint, flash, jsonify, redirect, render_template, request, url_for)
 from flask_login import current_user, login_required, login_user, logout_user
