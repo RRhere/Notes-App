@@ -1,3 +1,18 @@
+#togglePassword {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    color: #ff004f;
+    border-radius: 10px;
+    padding: 0 14px;
+    transition: all 0.3s ease;
+}
+
+#togglePassword:hover {
+    background: #ff004f;
+    color: white;
+    border-color: #ff004f;
+}
+
 /* =========================
    GOOGLE FONTS
 ========================= */
