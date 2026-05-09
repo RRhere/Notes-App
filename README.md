@@ -2,6 +2,8 @@
 
 A feature-rich, production-ready notes application built with Flask and Python. Create, manage, and organize your notes with a beautiful, modern interface and enterprise-grade security.
 
+---
+
 ## ✨ Features
 
 ### Core Functionality
@@ -40,6 +42,8 @@ A feature-rich, production-ready notes application built with Flask and Python. 
 - 📊 **Error Handling**: Comprehensive error pages
 - 🔍 **Structured Logging**: Rotating file logs
 - 🧪 **Production Ready**: Deployment guides included
+
+---
 
 ## 🚀 Quick Start
 
@@ -83,6 +87,8 @@ python main.py
 
 Visit `http://localhost:5000` in your browser.
 
+---
+
 ## ⚙️ Configuration
 
 ### Environment Variables
@@ -100,6 +106,8 @@ DATABASE_URL=sqlite:///notes.db
 1. Go to https://myaccount.google.com/apppasswords
 2. Generate an app-specific password
 3. Add credentials to `.env`
+
+---
 
 ## 📂 Project Structure
 
@@ -129,6 +137,8 @@ Notes-App/
 └── PRODUCTION_GUIDE.md      # Deployment guide
 ```
 
+---
+
 ## 🔧 Technologies Used
 
 ### Backend
@@ -150,6 +160,8 @@ Notes-App/
 - **SQLite** - Development
 - **PostgreSQL** - Production
 
+---
+
 ## 📊 API Endpoints
 
 ### Authentication
@@ -166,6 +178,8 @@ Notes-App/
 - `POST /delete/<id>` - Delete note
 - `GET /api/notes` - Get notes as JSON
 
+---
+
 ## 🔐 Security Best Practices
 
 ✅ **Implemented:**
@@ -177,12 +191,16 @@ Notes-App/
 - Session security
 - Logging and monitoring
 
+---
+
 ## 📱 Browser Support
 
 - ✅ Chrome/Edge (latest)
 - ✅ Firefox (latest)
 - ✅ Safari (latest)
 - ✅ Mobile browsers
+
+---
 
 ## 🚀 Deployment
 
@@ -198,6 +216,8 @@ See [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md) for:
 ```bash
 gunicorn -w 4 -b 0.0.0.0:5000 main:app
 ```
+
+---
 
 ## 🐛 Troubleshooting
 
@@ -216,6 +236,8 @@ gunicorn -w 4 -b 0.0.0.0:5000 main:app
 - Ensure forms include `{{ csrf_token() }}`
 - Check that SESSION_COOKIE settings are correct
 
+---
+
 ## 📝 Logging
 
 Logs are stored in `logs/app.log` with automatic rotation.
@@ -228,13 +250,19 @@ tail -f logs/app.log
 grep ERROR logs/app.log
 ```
 
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
 
+---
+
 ## 📄 License
 
 This project is open source and available under the MIT License.
+
+---
 
 ## 👨‍💻 Author
 
@@ -242,12 +270,7 @@ This project is open source and available under the MIT License.
 
 Built with ❤️ for productivity
 
-## 📞 Support
-
-For issues and questions:
-1. Check the [PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md)
-2. Review logs in `logs/app.log`
-3. Check GitHub issues
+---
 
 ## 🎯 Roadmap
 
@@ -259,6 +282,8 @@ For issues and questions:
 - [ ] Mobile app
 - [ ] Two-factor authentication
 - [ ] Note search functionality
+
+---
 
 # ⭐ Support
 
