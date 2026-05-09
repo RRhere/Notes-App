@@ -1,19 +1,32 @@
-{% extends "base.html" %} {% block title %}Verify{% endblock %}
-{% block content %}
-<!DOCTYPE html>
-<body>
-</br>
-    <div>
-        <h2 class="custom-font-otp">OTP Verification</h2>
-    </br>
-        <p class="custom-font-p">Enter the OTP sent to your email to verify your account.</p>
-</br>
+{% extends "base.html" %}
 
-        <form method="post">
-            <label class="custom-font-nav" for="otp">OTP:</label>
-            <input  class="custom-font-nav" type="text" id="otp" name="otp" required placeholder="Enter OTP">
-            <button class="btn" type="submit">Verify</button>
-        </form>
-    </div>
-</body>
+{% block title %}Verify OTP{% endblock %}
+
+{% block content %}
+
+<div class="auth-card">
+
+    <h1 class="auth-title">OTP Verification</h1>
+
+    <p class="auth-subtitle">
+        Enter the OTP sent to your email
+    </p>
+
+    <form method="POST">
+
+        <input
+            type="text"
+            class="form-control custom-input mb-4 text-center"
+            name="otp"
+            placeholder="Enter OTP"
+        >
+
+        <button class="custom-btn w-100">
+            Verify OTP
+        </button>
+
+    </form>
+
+</div>
+
 {% endblock %}

@@ -1,34 +1,41 @@
-{% extends "base.html" %} {% block title %}SignUp{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Signup{% endblock %}
+
 {% block content %}
-<form method="POST">
-</br>
-    <h3 class="custom-font-head" align="center">SIGN UP</h3>
-</br>
-    <div class="form-group custom-font-nav">
-        <label for="email">Email Address</label>
-        <input type="email" class="form-control" id="email" name="email" placeholder="Enter Email">
-    </div>
-</br>
-    <div class="form-group custom-font-nav">
-        <label for="firstName">First Name</label>
-        <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Enter First Name">
-    </div>
-</br>
-    <div class="form-group custom-font-nav">
-        <label for="lastName">Last Name</label>
-        <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Enter Last Name">
-    </div>
-</br>
-    <div class="form-group custom-font-nav">
-        <label for="password1">Password</label>
-        <input type="password" class="form-control" id="password1" name="password1" placeholder="Enter Password">
-    </div>
-</br>
-    <div class="form-group custom-font-nav">
-        <label for="password2">Confirm Password</label>
-        <input type="password" class="form-control" id="password2" name="password2" placeholder="Confirm Password">
-    </div>
-    <br />
-    <button type="submit" class="btn">SUBMIT</button>
-</form>
+
+<div class="auth-card">
+
+    <h1 class="auth-title">Create Account</h1>
+
+    <form method="POST">
+
+        <div class="mb-3">
+            <input type="email" class="form-control custom-input" name="email" placeholder="Email Address">
+        </div>
+
+        <div class="mb-3">
+            <input type="text" class="form-control custom-input" name="firstName" placeholder="First Name">
+        </div>
+
+        <div class="mb-3">
+            <input type="text" class="form-control custom-input" name="lastName" placeholder="Last Name">
+        </div>
+
+        <div class="mb-3">
+            <input type="password" class="form-control custom-input" name="password1" placeholder="Password">
+        </div>
+
+        <div class="mb-4">
+            <input type="password" class="form-control custom-input" name="password2" placeholder="Confirm Password">
+        </div>
+
+        <button class="custom-btn w-100">
+            Sign Up
+        </button>
+
+    </form>
+
+</div>
+
 {% endblock %}

@@ -1,40 +1,71 @@
-{% extends "base.html" %} {% block title %}Notes{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}My Notes{% endblock %}
+
 {% block content %}
-<!DOCTYPE html>
-<body>
-  <div class="container mx-auto py-4 text-center">
-    <h1 class="text-xl font-bold mb-4 custom-font">MY NOTES</h1>
 
-    <form method="POST" action="/">
-      <div class="mb-4">
-        <label class="block text-gray-700 font-bold mb-2 custom-font" for="title">Title</label>
-        <br/>
-        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline custom-font" id="title" name="title" type="text" placeholder="Enter title">
-      </div>
+<div class="notes-container">
 
-      <div class="mb-4">
-        <label class="block text-gray-700 font-bold mb-2 custom-font" for="content">Content</label>
-        <br/>
-        <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline custom-font" id="content" name="content" rows="10" placeholder="Enter content"></textarea>
-      </div>
+    <h1 class="page-title">My Notes</h1>
 
-      <button class="btn" type="submit">
-        ADD NOTE
-      </button>
-    </form>
-  </br>
-    {% for note in notes %}
-    <div class="border rounded p-4 mb-4 custom-border">
-      <h2 class="text-lg font-bold custom-font">{{ note.title }}</h2>
-      <div class="text-content custom-font">{{ note.content }}</div>
-      <p class="text-sm text-gray-700 custom-font">{{ note.created }}</p>
-      <form method="POST" action="/delete/{{ note.id }}">
-        <button class="btn btn-danger custom-font-1" type="submit">
-          DELETE
-        </button>
-      </form>
+    <!-- CREATE NOTE -->
+    <div class="glass-card mb-5">
+
+        <form method="POST">
+
+            <input
+                type="text"
+                class="form-control custom-input mb-3"
+                name="title"
+                placeholder="Note Title"
+            >
+
+            <textarea
+                class="form-control custom-input mb-4"
+                name="content"
+                rows="6"
+                placeholder="Write your note..."
+            ></textarea>
+
+            <button class="custom-btn">
+                Add Note
+            </button>
+
+        </form>
+
     </div>
-    {% endfor %}
-  </div>
-</body>
+
+    <!-- NOTES -->
+    <div class="row">
+
+        {% for note in notes %}
+
+        <div class="col-lg-4 mb-4">
+
+            <div class="note-card">
+
+                <h3>{{ note.title }}</h3>
+
+                <p>{{ note.content }}</p>
+
+                <small>{{ note.created }}</small>
+
+                <form method="POST" action="/delete/{{ note.id }}">
+
+                    <button class="delete-btn mt-3">
+                        Delete
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
 {% endblock %}
