@@ -2,6 +2,7 @@ import hmac
 import logging
 import random
 import re
+import threading
 from datetime import datetime, timedelta
 
 from email_validator import EmailNotValidError, validate_email
@@ -303,9 +304,16 @@ def signup():
             logger.info(f"New user registered: {email}")
 
             try:
-                add_user_to_google_sheet(new_user)
+                threading.Thread(
+                    target=add_user_to_google_sheet,
+                    args=(new_user,),
+                    daemon=True
+                ).start()
+
             except Exception as e:
-                logger.warning(f"Google Sheets sync failed during signup: {e}")
+                logger.warning(
+                    f"Google Sheets sync failed during signup: {e}"
+                )
 
             if send_otp_email(new_user.email, otp_value):
                 flash('Verification code sent to your email. Please check your inbox.', 'info')
