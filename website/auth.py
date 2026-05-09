@@ -3,7 +3,6 @@ import logging
 import random
 import re
 import threading
-import resend
 import os
 
 from datetime import datetime, timedelta
@@ -19,10 +18,6 @@ from .sync_google_sheets import add_user_to_google_sheet
 
 auth = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
-
-resend.api_key = os.environ.get(
-    "RESEND_API_KEY"
-)
 
 OTP_EXPIRY_MINUTES = 15
 
@@ -83,25 +78,30 @@ def send_otp_email(email, otp):
 
     try:
 
-        params = {
-            "from": "Notes App <noreply@notes-app-s9nr.onrender.com>",
-            "to": [email],
-            "subject": "Your Notes App Verification Code",
-            "html": f"""
-            <h2>Your Verification Code</h2>
+        subject = 'Your Notes App Verification Code'
 
-            <p>Your OTP is:</p>
+        body = f"""
+Hello,
 
-            <h1>{otp}</h1>
+Your OTP code is:
 
-            <p>
-                This code expires in
-                {OTP_EXPIRY_MINUTES} minutes.
-            </p>
-            """
-        }
+{otp}
 
-        resend.Emails.send(params)
+This code expires in 15 minutes.
+
+Regards,
+Notes App
+"""
+
+        msg = Message(
+            subject,
+            recipients=[email],
+            body=body
+        )
+
+        with mail.connect() as conn:
+
+            conn.send(msg)
 
         logger.info(
             f"OTP email sent to {email}"
