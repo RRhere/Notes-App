@@ -102,6 +102,26 @@ def send_otp_email(email, otp):
         logger.error(f"Failed to send OTP email to {email}: {e}")
         return False
 
+def send_otp_email_async(email, otp):
+
+    thread = threading.Thread(
+        target=send_otp_email,
+        args=(email, otp),
+        daemon=True
+    )
+
+    thread.start()
+
+
+def add_user_to_sheet_async(user):
+
+    thread = threading.Thread(
+        target=add_user_to_google_sheet,
+        args=(user,),
+        daemon=True
+    )
+
+    thread.start()
 
 # ============================================
 # AUTH ROUTES
@@ -304,20 +324,39 @@ def signup():
             logger.info(f"New user registered: {email}")
 
             try:
-                threading.Thread(
-                    target=add_user_to_google_sheet,
-                    args=(new_user,),
-                    daemon=True
-                ).start()
+
+                add_user_to_sheet_async(new_user)
 
             except Exception as e:
+
                 logger.warning(
                     f"Google Sheets sync failed during signup: {e}"
                 )
 
-            if send_otp_email(new_user.email, otp_value):
-                flash('Verification code sent to your email. Please check your inbox.', 'info')
-                return redirect(url_for('auth.verify', email=new_user.email))
+            try:
+
+                send_otp_email_async(
+                    new_user.email,
+                    otp_value
+                )
+
+            except Exception as e:
+
+                logger.warning(
+                    f"Email sending failed: {e}"
+                )
+
+            flash(
+                'Verification code sent to your email.',
+                'info'
+            )
+
+            return redirect(
+                url_for(
+                    'auth.verify',
+                    email=new_user.email
+                )
+            )
 
             flash('Account created but verification email failed. Please try logging in.', 'warning')
             return redirect(url_for('auth.login'))
