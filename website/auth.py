@@ -4,6 +4,7 @@ import random
 import re
 import threading
 from datetime import datetime, timedelta
+from flask import current_app
 
 from email_validator import EmailNotValidError, validate_email
 from flask import (Blueprint, flash, jsonify, redirect, render_template,
@@ -102,26 +103,18 @@ def send_otp_email(email, otp):
         logger.error(f"Failed to send OTP email to {email}: {e}")
         return False
 
-def send_otp_email_async(email, otp):
+def send_otp_email_async(app, email, otp):
 
-    thread = threading.Thread(
-        target=send_otp_email,
-        args=(email, otp),
-        daemon=True
-    )
+    with app.app_context():
 
-    thread.start()
+        send_otp_email(email, otp)
 
 
-def add_user_to_sheet_async(user):
+def add_user_to_sheet_async(app, user):
 
-    thread = threading.Thread(
-        target=add_user_to_google_sheet,
-        args=(user,),
-        daemon=True
-    )
+    with app.app_context():
 
-    thread.start()
+        add_user_to_google_sheet(user)
 
 # ============================================
 # AUTH ROUTES
@@ -324,8 +317,11 @@ def signup():
             logger.info(f"New user registered: {email}")
 
             try:
-
-                add_user_to_sheet_async(new_user)
+                threading.Thread(
+                    target=add_user_to_sheet_async,
+                    args=(app, new_user),
+                    daemon=True
+                ).start()
 
             except Exception as e:
 
@@ -334,12 +330,13 @@ def signup():
                 )
 
             try:
+                app = current_app._get_current_object()
 
-                send_otp_email_async(
-                    new_user.email,
-                    otp_value
-                )
-
+                threading.Thread(
+                    target=send_otp_email_async,
+                    args=(app, new_user.email, otp_value),
+                    daemon=True
+                ).start()
             except Exception as e:
 
                 logger.warning(
