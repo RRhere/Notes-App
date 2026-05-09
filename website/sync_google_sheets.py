@@ -22,10 +22,7 @@ def get_google_sheet():
     # would raise TypeError and crash the caller with an opaque traceback.
     credentials_json = os.environ.get("GOOGLE_CREDENTIALS")
     if not credentials_json:
-        raise EnvironmentError(
-            "GOOGLE_CREDENTIALS environment variable is not set. "
-            "Google Sheets sync is disabled."
-        )
+        raise Exception("GOOGLE_CREDENTIALS missing")
 
     if not SHEET_NAME:
         raise EnvironmentError(
@@ -48,26 +45,39 @@ def get_google_sheet():
 
 
 def sync_with_google_sheets():
+
     try:
+
         sheet = get_google_sheet()
+
         users = User.query.all()
 
-        sheet.clear()
-        sheet.append_row(["ID", "Email", "First Name", "Last Name", "Verified"])
+        data = [
+            [
+                "ID",
+                "Email",
+                "First Name",
+                "Last Name",
+                "Verified"
+            ]
+        ]
 
         for user in users:
-            sheet.append_row([
+
+            data.append([
                 user.id,
                 user.email,
                 user.first_name,
                 user.last_name,
-                user.is_verified,
+                user.is_verified
             ])
 
-        logger.info("Google Sheets synced successfully")
+        sheet.clear()
 
-    except EnvironmentError as e:
-        # Config not set — expected in dev; log at debug level only
-        logger.debug(f"Google Sheets sync skipped: {e}")
+        sheet.update("A1", data)
+
+        print("Google Sheets synced successfully")
+
     except Exception as e:
-        logger.error(f"Google Sheets sync error: {e}")
+
+        print("Google Sheets sync error:", e)
