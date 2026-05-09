@@ -57,8 +57,8 @@
           </span>
           <input type="password" class="form-control custom-input" id="password1" name="password1"
                  placeholder="Create a strong password" required autocomplete="new-password">
-          <button class="btn btn-outline-primary" type="button" id="togglePassword1" title="Show password">
-            <i class="fas fa-eye"></i>
+          <button class="btn password-toggle-btn" type="button" id="togglePassword1" title="Show password">
+            <i class="fa-solid fa-eye"></i>
           </button>
         </div>
         <div id="passwordStrength" class="mt-2"></div>
@@ -81,8 +81,8 @@
           </span>
           <input type="password" class="form-control custom-input" id="password2" name="password2"
                  placeholder="Confirm your password" required autocomplete="new-password">
-          <button class="btn btn-outline-primary" type="button" id="togglePassword2" title="Show password">
-            <i class="fas fa-eye"></i>
+          <button class="btn password-toggle-btn" type="button" id="togglePassword2" title="Show password">
+            <i class="fa-solid fa-eye"></i>
           </button>
         </div>
         <div id="passwordMatch" class="mt-2"></div>
@@ -125,10 +125,10 @@
     if (!password) { strengthDiv.innerHTML = ''; return; }
 
     let strength = 0;
-    if (password.length >= 8)        strength++;
-    if (/[A-Z]/.test(password))      strength++;
-    if (/[a-z]/.test(password))      strength++;
-    if (/[0-9]/.test(password))      strength++;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
 
     const levels  = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
     const colours = ['danger', 'warning', 'info', 'success', 'success'];
@@ -141,8 +141,8 @@
   }
 
   function checkPasswordMatch() {
-    const p1       = document.getElementById('password1').value;
-    const p2       = document.getElementById('password2').value;
+    const p1 = document.getElementById('password1').value;
+    const p2 = document.getElementById('password2').value;
     const matchDiv = document.getElementById('passwordMatch');
     if (!p2) { matchDiv.innerHTML = ''; return; }
     matchDiv.innerHTML = p1 === p2
