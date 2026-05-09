@@ -208,7 +208,6 @@ def verify(email):
                 flash('Please enter the verification code', category='error')
                 return render_template('verify.html', email=email, user=current_user)
 
-            # BUG FIX: check expiry before comparing
             if _otp_expired(user):
                 flash(
                     f'Verification code has expired. '
@@ -217,7 +216,6 @@ def verify(email):
                 )
                 return render_template('verify.html', email=email, user=current_user)
 
-            # BUG FIX: constant-time comparison prevents timing attacks
             if _otp_matches(user, user_otp):
                 user.is_verified = True
                 user.otp_secret = None
@@ -400,7 +398,6 @@ def forgot_password():
 
             if not user:
                 logger.info(f"Password reset for unknown email: {email}")
-                # Generic message prevents email enumeration
                 flash('If an account exists, a verification code will be sent', 'info')
                 return render_template("forgot_password.html", user=current_user)
 
@@ -435,7 +432,6 @@ def reset_password(email):
             new_password1 = request.form.get('password1', '')
             new_password2 = request.form.get('password2', '')
 
-            # BUG FIX: check expiry before comparing
             if _otp_expired(user):
                 flash('Verification code has expired. Please request a new one.', 'error')
                 return redirect(url_for('auth.forgot_password'))

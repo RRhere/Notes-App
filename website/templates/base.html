@@ -108,14 +108,11 @@
   <!-- FOOTER -->
   <footer class="footer">
     <div class="container">
-      <div class="row align-items-center text-center justify-content-center">
-        <div class="col-md-6">
-          <p class="mb-0">&copy; 2026 Notes App. 
-                          <br>
-                          Built with passion :).</p>
-        </div>
-        <div class="col-md-6 text-end">
-          <small class="text-muted">Built with <i class="fas fa-heart text-danger"></i> for productivity</small>
+          <p>
+            &copy; 2026 Notes App.
+            <br>
+            Built with passion :)
+          </p>
         </div>
       </div>
     </div>
@@ -147,7 +144,6 @@
         info:    'fa-info-circle text-info',
       };
 
-      // Normalise 'error' → 'danger' for Bootstrap colour classes
       const bsType   = (type === 'error') ? 'danger' : type;
       const iconClass = iconMap[bsType] || iconMap.info;
 
@@ -170,7 +166,6 @@
       toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
 
-    // Safety net: hide overlay if it somehow appears on a plain page load
     window.addEventListener('load', hideLoading);
   </script>
 

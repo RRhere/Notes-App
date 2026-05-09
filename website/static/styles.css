@@ -1,16 +1,28 @@
 #togglePassword {
-    background: #1e1e1e;
-    border: 1px solid #333;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid transparent;
+    border-left: none;
     color: #ff004f;
-    border-radius: 10px;
-    padding: 0 14px;
+    border-radius: 0 12px 12px 0;
+    padding: 0 16px;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #togglePassword:hover {
     background: #ff004f;
     color: white;
-    border-color: #ff004f;
+}
+
+#togglePassword:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+#togglePassword i {
+    font-size: 16px;
 }
 
 /* =========================
@@ -600,17 +612,27 @@ main {
 ========================= */
 
 .footer {
+    width: 100%;
+    padding: 25px 0;
+    background: #111827;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 60px;
+}
+
+.footer .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     text-align: center;
-    padding: 30px 20px;
-    color: var(--muted);
-    border-top: 1px solid var(--border-color);
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(10px);
-    margin-top: auto;
 }
 
 .footer p {
     margin: 0;
+    width: 100%;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 15px;
+    line-height: 1.8;
 }
 
 /* =========================
