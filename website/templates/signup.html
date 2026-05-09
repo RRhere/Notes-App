@@ -1,41 +1,249 @@
 {% extends "base.html" %}
 
-{% block title %}Signup{% endblock %}
+{% block title %}Sign Up - Notes App{% endblock %}
 
 {% block content %}
 
-<div class="auth-card">
-
-    <h1 class="auth-title">Create Account</h1>
-
-    <form method="POST">
-
-        <div class="mb-3">
-            <input type="email" class="form-control custom-input" name="email" placeholder="Email Address">
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="fas fa-user-plus"></i>
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join our community and start taking notes</p>
         </div>
 
-        <div class="mb-3">
-            <input type="text" class="form-control custom-input" name="firstName" placeholder="First Name">
+        <form method="POST" id="signupForm">
+            {{ csrf_token() }}
+
+            <div class="mb-4">
+                <label for="email" class="form-label">Email Address</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent">
+                        <i class="fas fa-envelope text-primary"></i>
+                    </span>
+                    <input
+                        type="email"
+                        class="form-control custom-input"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label for="firstName" class="form-label">First Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent">
+                            <i class="fas fa-user text-primary"></i>
+                        </span>
+                        <input
+                            type="text"
+                            class="form-control custom-input"
+                            id="firstName"
+                            name="firstName"
+                            placeholder="First name"
+                            required
+                            autocomplete="given-name"
+                        >
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <label for="lastName" class="form-label">Last Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent">
+                            <i class="fas fa-user text-primary"></i>
+                        </span>
+                        <input
+                            type="text"
+                            class="form-control custom-input"
+                            id="lastName"
+                            name="lastName"
+                            placeholder="Last name"
+                            required
+                            autocomplete="family-name"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password1" class="form-label">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent">
+                        <i class="fas fa-lock text-primary"></i>
+                    </span>
+                    <input
+                        type="password"
+                        class="form-control custom-input"
+                        id="password1"
+                        name="password1"
+                        placeholder="Create a strong password"
+                        required
+                        autocomplete="new-password"
+                    >
+                    <button class="btn btn-outline-primary" type="button" id="togglePassword1" title="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div id="passwordStrength" class="mt-2"></div>
+                <small class="form-text text-muted d-block mt-2">
+                    Password requirements:
+                    <ul class="mb-0 mt-1">
+                        <li>At least 8 characters</li>
+                        <li>One uppercase letter (A-Z)</li>
+                        <li>One lowercase letter (a-z)</li>
+                        <li>One number (0-9)</li>
+                    </ul>
+                </small>
+            </div>
+
+            <div class="mb-4">
+                <label for="password2" class="form-label">Confirm Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent">
+                        <i class="fas fa-lock text-primary"></i>
+                    </span>
+                    <input
+                        type="password"
+                        class="form-control custom-input"
+                        id="password2"
+                        name="password2"
+                        placeholder="Confirm your password"
+                        required
+                        autocomplete="new-password"
+                    >
+                    <button class="btn btn-outline-primary" type="button" id="togglePassword2" title="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div id="passwordMatch" class="mt-2"></div>
+            </div>
+
+            <button
+                type="submit"
+                class="custom-btn w-100 btn-lg"
+                id="signupBtn"
+            >
+                <i class="fas fa-user-plus me-2"></i>
+                Create Account
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p class="mb-0">
+                Already have an account?
+                <a href="/login" class="text-decoration-none fw-bold">
+                    Login here
+                </a>
+            </p>
         </div>
-
-        <div class="mb-3">
-            <input type="text" class="form-control custom-input" name="lastName" placeholder="Last Name">
-        </div>
-
-        <div class="mb-3">
-            <input type="password" class="form-control custom-input" name="password1" placeholder="Password">
-        </div>
-
-        <div class="mb-4">
-            <input type="password" class="form-control custom-input" name="password2" placeholder="Confirm Password">
-        </div>
-
-        <button class="custom-btn w-100">
-            Sign Up
-        </button>
-
-    </form>
-
+    </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle password visibility
+    function setupPasswordToggle(toggleId, inputId) {
+        document.getElementById(toggleId).addEventListener('click', function() {
+            const input = document.getElementById(inputId);
+            const icon = this.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+
+    setupPasswordToggle('togglePassword1', 'password1');
+    setupPasswordToggle('togglePassword2', 'password2');
+
+    // Password strength checker
+    function checkPasswordStrength() {
+        const password = document.getElementById('password1').value;
+        const strengthDiv = document.getElementById('passwordStrength');
+        let strength = 0;
+        let feedback = [];
+
+        if (password.length >= 8) strength++;
+        else feedback.push('At least 8 characters');
+
+        if (/[A-Z]/.test(password)) strength++;
+        else feedback.push('One uppercase letter');
+
+        if (/[a-z]/.test(password)) strength++;
+        else feedback.push('One lowercase letter');
+
+        if (/[0-9]/.test(password)) strength++;
+        else feedback.push('One number');
+
+        const strengthLevels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+        const strengthColors = ['danger', 'warning', 'info', 'success', 'success'];
+
+        if (password.length === 0) {
+            strengthDiv.innerHTML = '';
+            return;
+        }
+
+        strengthDiv.innerHTML = `
+            <div class="progress" style="height: 4px;">
+                <div class="progress-bar bg-${strengthColors[strength]}" style="width: ${strength * 25}%"></div>
+            </div>
+            <small class="text-${strengthColors[strength]}">${strengthLevels[strength]}</small>
+        `;
+    }
+
+    // Password match checker
+    function checkPasswordMatch() {
+        const password1 = document.getElementById('password1').value;
+        const password2 = document.getElementById('password2').value;
+        const matchDiv = document.getElementById('passwordMatch');
+
+        if (password2.length === 0) {
+            matchDiv.innerHTML = '';
+            return;
+        }
+
+        if (password1 === password2) {
+            matchDiv.innerHTML = '<small class="text-success"><i class="fas fa-check"></i> Passwords match</small>';
+        } else {
+            matchDiv.innerHTML = '<small class="text-danger"><i class="fas fa-times"></i> Passwords do not match</small>';
+        }
+    }
+
+    // Add event listeners
+    document.getElementById('password1').addEventListener('input', function() {
+        checkPasswordStrength();
+        checkPasswordMatch();
+    });
+
+    document.getElementById('password2').addEventListener('input', checkPasswordMatch);
+
+    // Form submission
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('signupBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+
+        setTimeout(() => {
+            if (btn.disabled) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }, 5000);
+    });
+</script>
 {% endblock %}

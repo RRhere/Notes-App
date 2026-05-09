@@ -1,32 +1,88 @@
 {% extends "base.html" %}
 
-{% block title %}Verify OTP{% endblock %}
+{% block title %}Verify Email - Notes App{% endblock %}
 
 {% block content %}
 
-<div class="auth-card">
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="fas fa-shield-alt"></i>
+            <h1 class="auth-title">Verify Your Email</h1>
+            <p class="auth-subtitle">Enter the verification code sent to {{ email }}</p>
+        </div>
 
-    <h1 class="auth-title">OTP Verification</h1>
+        <form method="POST" id="verifyForm">
+            {{ csrf_token() }}
 
-    <p class="auth-subtitle">
-        Enter the OTP sent to your email
-    </p>
+            <div class="mb-4">
+                <label for="otp" class="form-label">Verification Code</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent">
+                        <i class="fas fa-lock text-primary"></i>
+                    </span>
+                    <input
+                        type="text"
+                        class="form-control custom-input text-center"
+                        id="otp"
+                        name="otp"
+                        placeholder="Enter 6-digit code"
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        required
+                        inputmode="numeric"
+                    >
+                </div>
+                <small class="form-text text-muted">Check your email for the verification code</small>
+            </div>
 
-    <form method="POST">
+            <button
+                type="submit"
+                class="custom-btn w-100 btn-lg"
+                id="submitBtn"
+            >
+                <i class="fas fa-check me-2"></i>
+                Verify Code
+            </button>
+        </form>
 
-        <input
-            type="text"
-            class="form-control custom-input mb-4 text-center"
-            name="otp"
-            placeholder="Enter OTP"
-        >
-
-        <button class="custom-btn w-100">
-            Verify OTP
-        </button>
-
-    </form>
-
+        <div class="auth-footer">
+            <p class="mb-0">
+                Didn't receive the code?
+                <a href="#" onclick="resendCode()" class="text-decoration-none fw-bold">
+                    Resend code
+                </a>
+            </p>
+        </div>
+    </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Only allow numbers
+    document.getElementById('otp').addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
+    document.getElementById('verifyForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('submitBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
+
+        setTimeout(() => {
+            if (btn.disabled) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }, 5000);
+    });
+
+    function resendCode() {
+        event.preventDefault();
+        showToast('Verification code sent to your email', 'info');
+    }
+</script>
 {% endblock %}

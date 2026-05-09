@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Notes App{% endblock %}
+
+{% block content %}
+
+<div class="error-page">
+    <div class="error-code">404</div>
+    <h2 class="error-message">Page Not Found</h2>
+    <p class="error-description">
+        Sorry, the page you're looking for doesn't exist or has been moved.
+    </p>
+    <a href="/" class="custom-btn">
+        <i class="fas fa-home me-2"></i>
+        Return to Home
+    </a>
+</div>
+
+{% endblock %}
