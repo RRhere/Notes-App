@@ -19,7 +19,7 @@ from . import db, mail
 # @limiter.limit decorator silently did nothing.
 from . import limiter
 from .models import User
-from .sync_google_sheets import sync_with_google_sheets
+from .sync_google_sheets import add_user_to_google_sheet
 
 auth = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -303,7 +303,7 @@ def signup():
             logger.info(f"New user registered: {email}")
 
             try:
-                sync_with_google_sheets()
+                add_user_to_google_sheet(new_user)
             except Exception as e:
                 logger.warning(f"Google Sheets sync failed during signup: {e}")
 
