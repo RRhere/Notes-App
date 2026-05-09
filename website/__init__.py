@@ -5,14 +5,12 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_mail import Mail
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 
 db = SQLAlchemy()
-mail = Mail()
 csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address)
 
@@ -47,7 +45,6 @@ def create_app():
     
     # Initialize extensions
     db.init_app(app)
-    mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
     

@@ -260,6 +260,14 @@ For issues and questions:
 - [ ] Two-factor authentication
 - [ ] Note search functionality
 
----
+# ⭐ Support
+
+If you like this project:
+
+Star the repository
+Fork the project
+Share it with others
+ 
+ ---
 
 **Last Updated**: May 2026

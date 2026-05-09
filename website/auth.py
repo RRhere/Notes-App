@@ -3,21 +3,25 @@ import logging
 import random
 import re
 import threading
+import resend
 
 from datetime import datetime, timedelta
 from flask import current_app
 from email_validator import EmailNotValidError, validate_email
 from flask import (Blueprint, flash, jsonify, redirect, render_template, request, url_for)
 from flask_login import current_user, login_required, login_user, logout_user
-from flask_mail import Message
 from werkzeug.security import check_password_hash, generate_password_hash
-from . import db, mail
+from . import db
 from . import limiter
 from .models import User
 from .sync_google_sheets import add_user_to_google_sheet
 
 auth = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
+
+resend.api_key = os.environ.get(
+    "RESEND_API_KEY"
+)
 
 OTP_EXPIRY_MINUTES = 15
 
@@ -75,23 +79,43 @@ def _otp_matches(user, candidate):
 
 
 def send_otp_email(email, otp):
-    try:
-        subject = 'Your Notes App Verification Code'
-        body = (
-            f"Hello,\n\n"
-            f"Your verification code is: {otp}\n\n"
-            f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.\n\n"
-            f"If you didn't request this code, please ignore this email.\n\n"
-            f"Best regards,\nNotes App Team"
-        )
-        msg = Message(subject, recipients=[email], body=body)
-        mail.send(msg)
-        logger.info(f"OTP email sent to {email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}: {e}")
-        return False
 
+    try:
+
+        params = {
+            "from": "Notes App <onboarding@resend.dev>",
+            "to": [email],
+            "subject": "Your Notes App Verification Code",
+            "html": f"""
+            <h2>Your Verification Code</h2>
+
+            <p>Your OTP is:</p>
+
+            <h1>{otp}</h1>
+
+            <p>
+                This code expires in
+                {OTP_EXPIRY_MINUTES} minutes.
+            </p>
+            """
+        }
+
+        resend.Emails.send(params)
+
+        logger.info(
+            f"OTP email sent to {email}"
+        )
+
+        return True
+
+    except Exception as e:
+
+        logger.error(
+            f"Failed to send OTP email: {e}"
+        )
+
+        return False
+    
 def send_otp_email_async(app, email, otp):
 
     with app.app_context():
