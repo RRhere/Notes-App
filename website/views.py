@@ -1,20 +1,14 @@
 import logging
 
-from flask import (Blueprint, flash, jsonify, redirect, render_template,
-                   request, url_for)
+from flask import (Blueprint, flash, jsonify, redirect, render_template, request, url_for)
 from flask_login import current_user, login_required
-
 from . import db
 from .models import Note
 
 views = Blueprint("views", __name__)
 logger = logging.getLogger(__name__)
 
-
-# ============================================
 # HELPER FUNCTIONS
-# ============================================
-
 def get_user_notes():
     """Return all notes for the current user, newest first."""
     try:
@@ -32,11 +26,7 @@ def get_user_notes():
 def _is_ajax():
     return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-
-# ============================================
 # VIEWS ROUTES
-# ============================================
-
 @views.route("/", methods=["GET", "POST"])
 @login_required
 def home():
@@ -81,8 +71,6 @@ def home():
                         },
                     })
 
-                # BUG FIX: POST → Redirect → GET so that browser refresh does
-                # not resubmit the form and create a duplicate note.
                 flash("Note created successfully!", category="success")
                 return redirect(url_for('views.home'))
 
@@ -107,7 +95,6 @@ def home():
 @login_required
 def delete(note_id):
     try:
-        # BUG FIX: db.session.get() replaces the deprecated Note.query.get()
         note = db.session.get(Note, note_id)
 
         if not note:

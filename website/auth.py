@@ -3,22 +3,15 @@ import logging
 import random
 import re
 import threading
+
 from datetime import datetime, timedelta
 from flask import current_app
-
 from email_validator import EmailNotValidError, validate_email
-from flask import (Blueprint, flash, jsonify, redirect, render_template,
-                   request, url_for)
+from flask import (Blueprint, flash, jsonify, redirect, render_template, request, url_for)
 from flask_login import current_user, login_required, login_user, logout_user
 from flask_mail import Message
 from werkzeug.security import check_password_hash, generate_password_hash
-
 from . import db, mail
-# BUG FIX: import the single app-bound limiter from __init__ instead of
-# creating a second, unregistered Limiter instance here.  The old code
-# instantiated `limiter = Limiter(key_func=get_remote_address)` inside
-# auth.py which was never initialised with the Flask app, so every
-# @limiter.limit decorator silently did nothing.
 from . import limiter
 from .models import User
 from .sync_google_sheets import add_user_to_google_sheet
@@ -28,11 +21,7 @@ logger = logging.getLogger(__name__)
 
 OTP_EXPIRY_MINUTES = 15
 
-
-# ============================================
 # VALIDATION HELPERS
-# ============================================
-
 def validate_email_format(email):
     try:
         validate_email(email, check_deliverability=False)
@@ -116,10 +105,7 @@ def add_user_to_sheet_async(app, user):
 
         add_user_to_google_sheet(user)
 
-# ============================================
 # AUTH ROUTES
-# ============================================
-
 @auth.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
@@ -309,7 +295,7 @@ def signup():
                 password=generate_password_hash(password1, method='pbkdf2:sha256:260000'),
             )
             db.session.add(new_user)
-            db.session.flush()          # get new_user.id without committing
+            db.session.flush()
 
             otp_value = _generate_otp(new_user)
             db.session.commit()
@@ -317,6 +303,7 @@ def signup():
             logger.info(f"New user registered: {email}")
 
             try:
+                app = current_app._get_current_object()
                 threading.Thread(
                     target=add_user_to_sheet_async,
                     args=(app, new_user),
@@ -331,7 +318,6 @@ def signup():
 
             try:
                 app = current_app._get_current_object()
-
                 threading.Thread(
                     target=send_otp_email_async,
                     args=(app, new_user.email, otp_value),
@@ -354,9 +340,6 @@ def signup():
                     email=new_user.email
                 )
             )
-
-            flash('Account created but verification email failed. Please try logging in.', 'warning')
-            return redirect(url_for('auth.login'))
 
         except Exception as e:
             logger.error(f"Signup error: {e}")

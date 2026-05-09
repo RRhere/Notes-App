@@ -13,7 +13,6 @@
     </div>
 
     <form method="POST" id="verifyForm">
-      <!-- BUG FIX: hidden input so the CSRF token is actually submitted -->
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="mb-4">
@@ -46,12 +45,6 @@
     <div class="auth-footer">
       <p class="mb-0">
         Didn't receive the code?
-        <!--
-          BUG FIX: the old resendCode() just called showToast() and never
-          contacted the server.  The new version POSTs to the /resend_otp
-          endpoint added in auth.py which actually generates a fresh OTP and
-          sends the email.
-        -->
         <a href="#" id="resendLink" class="text-decoration-none fw-bold">Resend code</a>
       </p>
     </div>
@@ -62,7 +55,6 @@
 
 {% block scripts %}
 <script>
-  // Only allow digits
   document.getElementById('otp').addEventListener('input', function () {
     this.value = this.value.replace(/[^0-9]/g, '');
   });
@@ -77,13 +69,11 @@
     }, 8000);
   });
 
-  // BUG FIX: actually call the server to resend the OTP
   document.getElementById('resendLink').addEventListener('click', function (e) {
     e.preventDefault();
 
     const link      = this;
     const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-    // email is rendered by Jinja and JSON-encoded to be JS-safe
 
     link.textContent = 'Sending…';
     link.style.pointerEvents = 'none';
@@ -92,7 +82,6 @@
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        // Flask-WTF also accepts the token via this header for AJAX requests
         'X-CSRFToken': csrfToken,
       },
       body: 'csrf_token=' + encodeURIComponent(csrfToken),
@@ -107,7 +96,6 @@
     })
     .catch(() => showToast('An error occurred. Please try again.', 'danger'))
     .finally(() => {
-      // Prevent spamming: re-enable after 60 s
       setTimeout(() => {
         link.textContent = 'Resend code';
         link.style.pointerEvents = '';

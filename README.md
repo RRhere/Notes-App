@@ -262,5 +262,4 @@ For issues and questions:
 
 ---
 
-**Last Updated**: 2026
-**Version**: 2.0 - Modern & Production Ready
+**Last Updated**: May 2026

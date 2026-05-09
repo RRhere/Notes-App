@@ -26,13 +26,6 @@
     </div>
 
     <form method="POST" id="noteForm" class="needs-validation" novalidate>
-      <!--
-        BUG FIX: previously this was bare `{{ csrf_token() }}` which renders
-        the token as visible text and never submits it as a form field, causing
-        every POST to fail with a 400 CSRF error.  The JS delete code also
-        looked for `input[name="csrf_token"]` — if it didn't exist the whole
-        delete flow threw an exception.
-      -->
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="mb-4">
@@ -161,8 +154,6 @@
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function getCsrfToken() {
-    // BUG FIX: the old code crashed here because csrf_token() was bare text
-    // (not a hidden input), so querySelector returned null.
     return document.querySelector('input[name="csrf_token"]').value;
   }
 
@@ -282,7 +273,6 @@
         this.classList.remove('was-validated');
         document.getElementById('titleCount').textContent   = '0';
         document.getElementById('contentCount').textContent = '0';
-        // Reload to render the new note card
         setTimeout(() => location.reload(), 500);
       } else {
         showToast(data.message || 'Failed to save note', 'danger');

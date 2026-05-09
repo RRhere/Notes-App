@@ -13,12 +13,6 @@
     </div>
 
     <form method="POST" id="loginForm">
-      <!--
-        BUG FIX: previously this was bare `{{ csrf_token() }}` which renders
-        the token value as visible text on the page and never submits it as a
-        form field, causing every POST to fail with a 400 CSRF error.
-        It must be a hidden <input> with name="csrf_token".
-      -->
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="mb-4">
@@ -100,7 +94,6 @@
     const btn = document.getElementById('loginBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
-    // Re-enable after 8 s in case of network error (form does a full-page POST)
     setTimeout(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Login'; }, 8000);
   });
 </script>

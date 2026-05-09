@@ -10,14 +10,9 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(150), nullable=False)
     password = db.Column(db.String(300), nullable=False)
     otp_secret = db.Column(db.String(10))
-    # BUG FIX: otp_created_at enables 15-minute expiry checks in auth.py.
-    # Previously OTP codes never expired.
-    # NOTE: adding this column to an existing DB requires a migration.
     otp_created_at = db.Column(db.DateTime, nullable=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
 
-    # BUG FIX: relationship backref so user.notes works elsewhere and
-    # cascade ensures notes are removed when a user is deleted.
     notes = db.relationship(
         'Note',
         backref='author',
