@@ -1,16 +1,29 @@
-# config.py
 import os
-import smtplib, ssl
 
-SECRET_KEY = '12345'
-SQLALCHEMY_DATABASE_URI = 'sqlite:///temp1.db'
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "dev-secret-key"
+)
+
+SQLALCHEMY_DATABASE_URI = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///temp1.db"
+)
+
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-# Flask-Mail configuration
-MAIL_SERVER = 'smtp.gmail.com'
+# MAIL CONFIG
+
+MAIL_SERVER = "smtp.gmail.com"
+
 MAIL_PORT = 587
+
 MAIL_USE_TLS = True
+
 MAIL_USE_SSL = False
-MAIL_USERNAME = 'tempmailonlyuse@gmail.com'
-MAIL_PASSWORD = 'hjcu hoiz bzac sqde'
-MAIL_DEFAULT_SENDER = 'tempmailonlyuse@gmail.com'
+
+MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+
+MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+
+MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME")

@@ -1,36 +1,73 @@
-from flask import Blueprint, render_template, request, flash, jsonify, redirect, url_for
-from flask_login import login_required, current_user
+from flask import Blueprint
+from flask import render_template
+from flask import request
+from flask import redirect
+from flask import flash
+from flask import url_for
+
+from flask_login import login_required
+from flask_login import current_user
+
+from .models import Note
+
 from . import db
-from .models import Note, User
-import json
-from sqlalchemy.sql import exists
+
+views = Blueprint("views", __name__)
 
 
-views=Blueprint('views',__name__)
+@views.route("/", methods=["GET", "POST"])
 
-@views.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
-    if request.method == 'POST':
-        note_title = request.form['title']
-        note_content = request.form['content']
 
-        if note_title.strip() and note_content.strip():
-            new_note = Note(title=note_title, content=note_content, user_id=current_user.id)
+    if request.method == "POST":
+
+        title = request.form.get("title")
+
+        content = request.form.get("content")
+
+        if len(title) < 1:
+
+            flash("Title is too short", category="error")
+
+        else:
+
+            new_note = Note(
+                title=title,
+                content=content,
+                user_id=current_user.id
+            )
+
             db.session.add(new_note)
+
             db.session.commit()
-            flash("Note added!", category='success')
 
-        #return redirect(url_for('views.home'))
+            flash("Note added!", category="success")
 
-    notes = Note.query.filter(Note.user_id==current_user.id).all()
-    return render_template('home.html', notes=notes, user=current_user)
+    notes = Note.query.filter_by(
+        user_id=current_user.id
+    ).all()
 
-@views.route('/delete/<int:note_id>', methods=['POST'])
-def delete_note(note_id):
-    note = Note.query.get_or_404(note_id)
-    db.session.delete(note)
-    db.session.commit()
-    flash("Note deleted!", category='success')
-    notes = Note.query.filter(Note.user_id==current_user.id).all()
-    return render_template('home.html', notes=notes, user=current_user)
+    return render_template(
+        "notes.html",
+        user=current_user,
+        notes=notes
+    )
+
+
+@views.route("/delete/<int:id>", methods=["POST"])
+
+@login_required
+def delete(id):
+
+    note = Note.query.get(id)
+
+    if note and note.user_id == current_user.id:
+
+        db.session.delete(note)
+
+        db.session.commit()
+
+        flash("Note deleted", category="success")
+
+    return redirect(url_for("views.home"))
